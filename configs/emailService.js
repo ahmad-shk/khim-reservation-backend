@@ -22,7 +22,7 @@ const sendReservationEmails = async (customerData) => {
 
     // --- DYNAMIC EXTRA FIELDS FOR ADMIN ---
     // FIXED: Added 'guests' and 'guests' to mandatory to avoid duplication in extra details
-    const mandatoryFields = ['name', 'email', 'date', 'time', 'guests', 'guests', 'restaurantName'];
+    const mandatoryFields = ['name', 'email', 'date', 'time', 'guests', 'restaurantName'];
     let extraDetailsHtml = "";
 
     Object.keys(customerData).forEach(key => {
