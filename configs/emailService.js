@@ -16,13 +16,15 @@ const WHATSAPP_LINK = "https://wa.me/4347763178906";
 const PRIMARY_COLOR = "#091C46"; 
 
 const sendReservationEmails = async (customerData) => {
-    const { name, email, date, time, guests, restaurantName } = customerData;
+    // FIXED: Mapping 'person' from payload to 'guests' for the template
+    const { name, email, date, time, person, restaurantName } = customerData;
+    const guestsCount = person || "0"; 
 
     // --- DYNAMIC EXTRA FIELDS FOR ADMIN ---
-    const mandatoryFields = ['name', 'email', 'date', 'time', 'guests', 'restaurantName'];
+    // FIXED: Added 'person' and 'guests' to mandatory to avoid duplication in extra details
+    const mandatoryFields = ['name', 'email', 'date', 'time', 'person', 'guests', 'restaurantName'];
     let extraDetailsHtml = "";
 
-    // Loop through all keys to find fields that are not in the mandatory list
     Object.keys(customerData).forEach(key => {
         if (!mandatoryFields.includes(key) && customerData[key]) {
             extraDetailsHtml += `
@@ -60,7 +62,7 @@ const sendReservationEmails = async (customerData) => {
                                     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f9f9f9; border-left: 4px solid ${PRIMARY_COLOR}; padding: 25px; margin: 20px 0; border-radius: 6px;">
                                         <tr><td width="40%" style="padding-bottom: 8px;">📅 <strong>Date:</strong></td><td style="padding-bottom: 8px;">${date}</td></tr>
                                         <tr><td style="padding-bottom: 8px;">⏰ <strong>Time:</strong></td><td style="padding-bottom: 8px;">${time}</td></tr>
-                                        <tr><td style="padding-bottom: 8px;">👥 <strong>Guests:</strong></td><td style="padding-bottom: 8px;">${guests} Person(s)</td></tr>
+                                        <tr><td style="padding-bottom: 8px;">👥 <strong>Guests:</strong></td><td style="padding-bottom: 8px;">${guestsCount} Person(s)</td></tr>
                                         ${isAdmin ? extraDetailsHtml : ""}
                                     </table>
 
@@ -90,16 +92,16 @@ const sendReservationEmails = async (customerData) => {
         "Reservation Received",
         `Dear <strong>${name}</strong>,`,
         `We have received your reservation request for <strong>${restaurantName}</strong>. Our team is currently reviewing availability and will be in touch shortly.`,
-        true, // WhatsApp button dikhao
-        false // Customer email
+        true, 
+        false 
     );
 
     const adminHtml = generateHtml(
         "New Booking Alert",
         `Hello Admin,`,
         `A new reservation request has been submitted by <strong>${name}</strong> (${email}). Please review the details below:`,
-        false, // No WhatsApp button for admin
-        true // Admin email (extra fields dikhayega)
+        false, 
+        true 
     );
 
     const attachments = [{
@@ -108,25 +110,31 @@ const sendReservationEmails = async (customerData) => {
         cid: 'logo_cid'
     }];
 
-    // --- SENDING EMAILS (Parallel) ---
+    // --- SENDING EMAILS ---
     try {
-        await Promise.all([
-            transporter.sendMail({
-                from: `"${restaurantName}" <${process.env.EMAIL_USER}>`,
-                to: email,
-                subject: `Reservation Request: ${name} at ${restaurantName}`,
-                html: customerHtml,
-                attachments
-            }),
-            transporter.sendMail({
+        // Sending separately to ensure one failure doesn't block the other and for better logging
+        await transporter.sendMail({
+            from: `"${restaurantName}" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `Reservation Request: ${name} at ${restaurantName}`,
+            html: customerHtml,
+            attachments
+        });
+        console.log(`✅ Customer Email sent to: ${email}`);
+
+        if (process.env.ADMIN_EMAIL) {
+            await transporter.sendMail({
                 from: `"${restaurantName}" <${process.env.EMAIL_USER}>`,
                 to: process.env.ADMIN_EMAIL,
                 subject: `New Booking Action Required: ${name}`,
                 html: adminHtml,
                 attachments
-            })
-        ]);
-        console.log("✅ Both Emails (Customer & Admin) sent successfully.");
+            });
+            console.log("✅ Admin Email sent successfully.");
+        } else {
+            console.warn("⚠️ Admin Email not sent: ADMIN_EMAIL not defined in .env");
+        }
+
     } catch (error) {
         console.error("❌ Error sending emails:", error);
         throw error;
