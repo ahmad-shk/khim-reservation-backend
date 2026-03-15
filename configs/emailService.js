@@ -16,13 +16,13 @@ const WHATSAPP_LINK = "https://wa.me/4347763178906";
 const PRIMARY_COLOR = "#091C46"; 
 
 const sendReservationEmails = async (customerData) => {
-    // FIXED: Mapping 'person' from payload to 'guests' for the template
-    const { name, email, date, time, person, restaurantName } = customerData;
-    const guestsCount = person || "0"; 
+    // FIXED: Mapping 'guests' from payload to 'guests' for the template
+    const { name, email, date, time, guests, restaurantName } = customerData;
+    const guestsCount = guests || "0"; 
 
     // --- DYNAMIC EXTRA FIELDS FOR ADMIN ---
-    // FIXED: Added 'person' and 'guests' to mandatory to avoid duplication in extra details
-    const mandatoryFields = ['name', 'email', 'date', 'time', 'person', 'guests', 'restaurantName'];
+    // FIXED: Added 'guests' and 'guests' to mandatory to avoid duplication in extra details
+    const mandatoryFields = ['name', 'email', 'date', 'time', 'guests', 'guests', 'restaurantName'];
     let extraDetailsHtml = "";
 
     Object.keys(customerData).forEach(key => {
@@ -62,7 +62,7 @@ const sendReservationEmails = async (customerData) => {
                                     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f9f9f9; border-left: 4px solid ${PRIMARY_COLOR}; padding: 25px; margin: 20px 0; border-radius: 6px;">
                                         <tr><td width="40%" style="padding-bottom: 8px;">📅 <strong>Date:</strong></td><td style="padding-bottom: 8px;">${date}</td></tr>
                                         <tr><td style="padding-bottom: 8px;">⏰ <strong>Time:</strong></td><td style="padding-bottom: 8px;">${time}</td></tr>
-                                        <tr><td style="padding-bottom: 8px;">👥 <strong>Guests:</strong></td><td style="padding-bottom: 8px;">${guestsCount} Person(s)</td></tr>
+                                        <tr><td style="padding-bottom: 8px;">👥 <strong>Guests:</strong></td><td style="padding-bottom: 8px;">${guestsCount} guests(s)</td></tr>
                                         ${isAdmin ? extraDetailsHtml : ""}
                                     </table>
 
